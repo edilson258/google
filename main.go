@@ -43,9 +43,11 @@ func main() {
 
 	dirIndex := indexer.IndexDir(dirPath)
 	result := search.Search(dirIndex, query)
-
   
 	for _, key := range SortMapKeys(result) {
+    if result[key] < 0.00001 {
+      continue
+    }
 		fmt.Printf("%s, %f\n", key, result[key])
 	}
 }

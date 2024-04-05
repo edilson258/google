@@ -23,8 +23,8 @@ go build
 3. now... just run it 😎
 
 ```shell
-#./google [dir path] [query]
-./google TestDir "what is java"
+./google index TestDir                              # create directory index
+./google search TestDirIndex.json "what is java"    # search for provided query
 ```
 
 ## License

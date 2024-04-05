@@ -19,7 +19,7 @@ func _getAllDirAndSubDirFiles(path string, entries []string) []string {
 
 	for _, entry := range dirEntries {
 		if entry.IsDir() {
-			entries = append(entries, _getAllDirAndSubDirFiles(buildPath(path, entry.Name()), entries)...)
+			entries = append(entries, _getAllDirAndSubDirFiles(buildPath(path, entry.Name()), []string{})...)
 		} else {
 			entries = append(entries, buildPath(path, entry.Name()))
 		}

@@ -4,6 +4,7 @@ type Tokens []string
 type FileTermFreqTable map[string]int
 type FileIndex struct {
 	Path  *string
-	Table *FileTermFreqTable
+	Table FileTermFreqTable
 }
 type DirIndex []*FileIndex
+type Session map[string]float64

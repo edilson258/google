@@ -35,7 +35,7 @@ func IndexFile(path string) (result *typedefs.FileIndex) {
 
 	fileIndex := typedefs.FileIndex{
 		Path:  &path,
-		Table: &fileTermFreqTable,
+		Table: fileTermFreqTable,
 	}
 
 	return &fileIndex

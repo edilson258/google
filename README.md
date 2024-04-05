@@ -4,18 +4,27 @@ This project is a local search engine developed in Go that utilizes the TF-IDF (
 [read more about TF-IDF](https://en.m.wikipedia.org/wiki/Tf%E2%80%93idf)
 
 ## Get Started 🔥
+
 (Don't use Linux? figure out yourself how to setup, sorry!)
 
 1. clone this project and build it
+
 ```shell
 git clone https://github.com/edilson258/google.git
+```
+
+2. build It
+
+```shell
 cd google
 go build
 ```
-2. now... just run it 😎
+
+3. now... just run it 😎
+
 ```shell
-#./google <dir_path> <query>
-./google DirForTesting "what is java?"
+#./google [dir path] [query]
+./google TestDir "what is java"
 ```
 
 ## License

@@ -1,0 +1,61 @@
+.\" Copyright 2002 Walter Harms (walter.harms@informatik.uni-oldenburg.de)
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" Distributed under GPL
+.\" %%%LICENSE_END
+.\"
+.TH CASINH 3 2021-03-22 "" "Linux Programmer's Manual"
+.SH NAME
+casinh, casinhf, casinhl \- complex arc sine hyperbolic
+.SH SYNOPSIS
+.nf
+.B #include <complex.h>
+.PP
+.BI "double complex casinh(double complex " z );
+.BI "float complex casinhf(float complex " z );
+.BI "long double complex casinhl(long double complex " z );
+.PP
+Link with \fI\-lm\fP.
+.fi
+.SH DESCRIPTION
+These functions calculate the complex arc hyperbolic sine of
+.IR z .
+If \fIy\ =\ casinh(z)\fP, then \fIz\ =\ csinh(y)\fP.
+The imaginary part of
+.I y
+is chosen in the interval [\-pi/2,pi/2].
+.PP
+One has:
+.PP
+.nf
+    casinh(z) = clog(z + csqrt(z * z + 1))
+.fi
+.SH VERSIONS
+These functions first appeared in glibc in version 2.1.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.ad l
+.nh
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR casinh (),
+.BR casinhf (),
+.BR casinhl ()
+T}	Thread safety	MT-Safe
+.TE
+.hy
+.ad
+.sp 1
+.SH CONFORMING TO
+C99, POSIX.1-2001, POSIX.1-2008.
+.SH SEE ALSO
+.BR asinh (3),
+.BR cabs (3),
+.BR cimag (3),
+.BR csinh (3),
+.BR complex (7)

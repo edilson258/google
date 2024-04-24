@@ -57,7 +57,7 @@ func storeIndexDir(dirPath string) {
 		return
 	}
 
-	f, err := os.Create(dirPath + "Index.json")
+	f, err := os.Create("Index.json")
 	defer f.Close()
 
 	if err != nil {
@@ -73,7 +73,7 @@ func searchAndDisplayResult(indexPath string, query string) {
 
 	stream, err := os.ReadFile(indexPath)
 	if err != nil {
-		fmt.Printf("[ERROR]: %s", err)
+		fmt.Printf("[ERROR]: %s\n", err)
 		os.Exit(1)
 	}
 

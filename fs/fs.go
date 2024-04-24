@@ -30,7 +30,7 @@ func _getAllDirAndSubDirFiles(path string, entries []string) []string {
 }
 
 func ReadFileContent(path string) (result *string) {
-	if isTXTfile(path) || isMDfile(path) {
+	if isTXTfile(path) || isMDfile(path) || linuxManPagesExt(path) {
 		fileBytes, err := os.ReadFile(path)
 
 		if err != nil {
@@ -57,4 +57,15 @@ func isTXTfile(path string) bool {
 
 func isMDfile(path string) bool {
 	return strings.HasSuffix(path, ".md")
+}
+
+func linuxManPagesExt(path string) bool {
+	return strings.HasSuffix(path, ".1") ||
+		strings.HasSuffix(path, ".2") ||
+		strings.HasSuffix(path, ".3") ||
+		strings.HasSuffix(path, ".4") ||
+		strings.HasSuffix(path, ".5") ||
+		strings.HasSuffix(path, ".6") ||
+		strings.HasSuffix(path, ".7") ||
+		strings.HasSuffix(path, ".8")
 }

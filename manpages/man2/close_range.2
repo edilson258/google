@@ -1,0 +1,284 @@
+.\" Copyright (c) 2020 Stephen Kitt <steve@sk2.org>
+.\" and Copyright (c) 2021 Michael Kerrisk <mtk.manpages@gmail.com>
+.\"
+.\" %%%LICENSE_START(VERBATIM)
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Since the Linux kernel and libraries are constantly changing, this
+.\" manual page may be incorrect or out-of-date.  The author(s) assume no
+.\" responsibility for errors or omissions, or for damages resulting from
+.\" the use of the information contained herein.  The author(s) may not
+.\" have taken the same level of care in the production of this manual,
+.\" which is licensed free of charge, as they might when working
+.\" professionally.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\" %%%LICENSE_END
+.\"
+.TH CLOSE_RANGE 2 2021-08-27 "Linux" "Linux Programmer's Manual"
+.SH NAME
+close_range \- close all file descriptors in a given range
+.SH SYNOPSIS
+.nf
+.B #include <linux/close_range.h>
+.PP
+.BI "int close_range(unsigned int " first ", unsigned int " last ,
+.BI "                unsigned int " flags );
+.fi
+.SH DESCRIPTION
+The
+.BR close_range ()
+system call closes all open file descriptors from
+.I first
+to
+.I last
+(included).
+.PP
+Errors closing a given file descriptor are currently ignored.
+.PP
+.I flags
+is a bit mask containing 0 or more of the following:
+.TP
+.BR CLOSE_RANGE_CLOEXEC " (since Linux 5.11)"
+Set the close-on-exec flag on the specified file descriptors,
+rather than immediately closing them.
+.TP
+.B CLOSE_RANGE_UNSHARE
+Unshare the specified file descriptors from any other processes
+before closing them,
+avoiding races with other threads sharing the file descriptor table.
+.SH RETURN VALUE
+On success,
+.BR close_range ()
+returns 0.
+On error, \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.TP
+.B EINVAL
+.I flags
+is not valid, or
+.I first
+is greater than
+.IR last .
+.PP
+The following can occur with
+.B CLOSE_RANGE_UNSHARE
+(when constructing the new descriptor table):
+.TP
+.B EMFILE
+The number of open file descriptors exceeds the limit specified in
+.IR /proc/sys/fs/nr_open
+(see
+.BR proc (5)).
+This error can occur in situations where that limit was lowered before
+a call to
+.BR close_range ()
+where the
+.B CLOSE_RANGE_UNSHARE
+flag is specified.
+.TP
+.B ENOMEM
+Insufficient kernel memory was available.
+.SH VERSIONS
+.BR close_range ()
+first appeared in Linux 5.9.
+Library support was added in glibc in version 2.34.
+.SH CONFORMING TO
+.BR close_range ()
+is a nonstandard function that is also present on FreeBSD.
+.SH NOTES
+.SS Closing all open file descriptors
+.\" 278a5fbaed89dacd04e9d052f4594ffd0e0585de
+To avoid blindly closing file descriptors
+in the range of possible file descriptors,
+this is sometimes implemented (on Linux)
+by listing open file descriptors in
+.I /proc/self/fd/
+and calling
+.BR close (2)
+on each one.
+.BR close_range ()
+can take care of this without requiring
+.I /proc
+and within a single system call,
+which provides significant performance benefits.
+.SS Closing file descriptors before exec
+.\" 60997c3d45d9a67daf01c56d805ae4fec37e0bd8
+File descriptors can be closed safely using
+.PP
+.in +4n
+.EX
+/* we don't want anything past stderr here */
+close_range(3, ~0U, CLOSE_RANGE_UNSHARE);
+execve(....);
+.EE
+.in
+.PP
+.B CLOSE_RANGE_UNSHARE
+is conceptually equivalent to
+.PP
+.in +4n
+.EX
+unshare(CLONE_FILES);
+close_range(first, last, 0);
+.EE
+.in
+.PP
+but can be more efficient:
+if the unshared range extends past
+the current maximum number of file descriptors allocated
+in the caller's file descriptor table
+(the common case when
+.I last
+is ~0U),
+the kernel will unshare a new file descriptor table for the caller up to
+.IR first ,
+copying as few file descriptors as possible.
+This avoids subsequent
+.BR close (2)
+calls entirely;
+the whole operation is complete once the table is unshared.
+.SS Closing files on \fBexec\fP
+.\" 582f1fb6b721facf04848d2ca57f34468da1813e
+This is particularly useful in cases where multiple
+.RB pre- exec
+setup steps risk conflicting with each other.
+For example, setting up a
+.BR seccomp (2)
+profile can conflict with a
+.BR close_range ()
+call:
+if the file descriptors are closed before the
+.BR seccomp (2)
+profile is set up,
+the profile setup can't use them itself,
+or control their closure;
+if the file descriptors are closed afterwards,
+the seccomp profile can't block the
+.BR close_range ()
+call or any fallbacks.
+Using
+.B CLOSE_RANGE_CLOEXEC
+avoids this:
+the descriptors can be marked before the
+.BR seccomp (2)
+profile is set up,
+and the profile can control access to
+.BR close_range ()
+without affecting the calling process.
+.SH EXAMPLES
+The program shown below opens the files named in its command-line arguments,
+displays the list of files that it has opened
+(by iterating through the entries in
+.IR /proc/PID/fd ),
+uses
+.BR close_range ()
+to close all file descriptors greater than or equal to 3,
+and then once more displays the process's list of open files.
+The following example demonstrates the use of the program:
+.PP
+.in +4n
+.EX
+$ \fBtouch /tmp/a /tmp/b /tmp/c\fP
+$ \fB./a.out /tmp/a /tmp/b /tmp/c\fP
+/tmp/a opened as FD 3
+/tmp/b opened as FD 4
+/tmp/c opened as FD 5
+/proc/self/fd/0 ==> /dev/pts/1
+/proc/self/fd/1 ==> /dev/pts/1
+/proc/self/fd/2 ==> /dev/pts/1
+/proc/self/fd/3 ==> /tmp/a
+/proc/self/fd/4 ==> /tmp/b
+/proc/self/fd/5 ==> /tmp/b
+/proc/self/fd/6 ==> /proc/9005/fd
+========= About to call close_range() =======
+/proc/self/fd/0 ==> /dev/pts/1
+/proc/self/fd/1 ==> /dev/pts/1
+/proc/self/fd/2 ==> /dev/pts/1
+/proc/self/fd/3 ==> /proc/9005/fd
+.EE
+.in
+.PP
+Note that the lines showing the pathname
+.I /proc/9005/fd
+result from the calls to
+.BR opendir (3).
+.SS Program source
+\&
+.EX
+#define _GNU_SOURCE
+#include <fcntl.h>
+#include <linux/close_range.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/syscall.h>
+#include <string.h>
+#include <unistd.h>
+#include <dirent.h>
+
+/* Show the contents of the symbolic links in /proc/self/fd */
+
+static void
+show_fds(void)
+{
+    DIR *dirp = opendir("/proc/self/fd");
+    if (dirp  == NULL) {
+        perror("opendir");
+        exit(EXIT_FAILURE);
+    }
+
+    for (;;) {
+        struct dirent *dp = readdir(dirp);
+        if (dp == NULL)
+            break;
+
+        if (dp\->d_type == DT_LNK) {
+            char path[PATH_MAX], target[PATH_MAX];
+            snprintf(path, sizeof(path), "/proc/self/fd/%s",
+                     dp\->d_name);
+
+            ssize_t len = readlink(path, target, sizeof(target));
+            printf("%s ==> %.*s\en", path, (int) len, target);
+        }
+    }
+
+    closedir(dirp);
+}
+
+int
+main(int argc, char *argv[])
+{
+    for (int j = 1; j < argc; j++) {
+        int fd = open(argv[j], O_RDONLY);
+        if (fd == \-1) {
+            perror(argv[j]);
+            exit(EXIT_FAILURE);
+        }
+        printf("%s opened as FD %d\en", argv[j], fd);
+    }
+
+    show_fds();
+
+    printf("========= About to call close_range() =======\en");
+
+    if (syscall(__NR_close_range, 3, \(ti0U, 0) == \-1) {
+        perror("close_range");
+        exit(EXIT_FAILURE);
+    }
+
+    show_fds();
+    exit(EXIT_FAILURE);
+}
+.EE
+.SH SEE ALSO
+.BR close (2)

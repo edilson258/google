@@ -1,0 +1,238 @@
+.\" Copyright 2002 walter harms (walter.harms@informatik.uni-oldenburg.de)
+.\"
+.\" %%%LICENSE_START(GPL_NOVERSION_ONELINE)
+.\" Distributed under GPL
+.\" %%%LICENSE_END
+.\"
+.\" based on the description in glibc source and infopages
+.\"
+.\" Corrections and additions, aeb
+.TH ARGZ_ADD 3 2021-03-22  "" "Linux Programmer's Manual"
+.SH NAME
+argz_add, argz_add_sep, argz_append, argz_count, argz_create,
+argz_create_sep, argz_delete, argz_extract, argz_insert,
+argz_next, argz_replace, argz_stringify \- functions to handle an argz list
+.SH SYNOPSIS
+.nf
+.B "#include <argz.h>"
+.PP
+.BI "error_t argz_add(char **restrict " argz ", size_t *restrict " argz_len ",
+.BI "                const char *restrict " str );
+.PP
+.BI "error_t argz_add_sep(char **restrict " argz \
+", size_t *restrict " argz_len ,
+.BI "                const char *restrict " str ", int " delim );
+.PP
+.BI "error_t argz_append(char **restrict " argz ", size_t *restrict " argz_len ,
+.BI "                const char *restrict " buf ", size_t " buf_len );
+.PP
+.BI "size_t argz_count(const char *" argz ", size_t " argz_len );
+.PP
+.BI "error_t argz_create(char *const " argv "[], char **restrict " argz ,
+.BI "                size_t *restrict " argz_len );
+.PP
+.BI "error_t argz_create_sep(const char *restrict " str ", int " sep ,
+.BI "                char **restrict " argz ", size_t *restrict " argz_len );
+.PP
+.BI "void argz_delete(char **restrict " argz ", size_t *restrict " argz_len ,
+.BI "                char *restrict " entry );
+.PP
+.BI "void argz_extract(const char *restrict " argz ", size_t " argz_len ,
+.BI "                char **restrict " argv );
+.PP
+.BI "error_t argz_insert(char **restrict " argz ", size_t *restrict " argz_len ,
+.BI "                char *restrict " before ", const char *restrict " entry );
+.PP
+.BI "char *argz_next(const char *restrict " argz ", size_t " argz_len ,
+.BI "                const char *restrict " entry );
+.PP
+.BI "error_t argz_replace(char **restrict " argz \
+", size_t *restrict " argz_len ,
+.BI "                const char *restrict " str ", const char *restrict " with ,
+.BI "                unsigned int *restrict " replace_count );
+.PP
+.BI "void argz_stringify(char *" argz ", size_t " len ", int " sep );
+.fi
+.SH DESCRIPTION
+These functions are glibc-specific.
+.PP
+An argz vector is a pointer to a character buffer together with a length.
+The intended interpretation of the character buffer is an array
+of strings, where the strings are separated by null bytes (\(aq\e0\(aq).
+If the length is nonzero, the last byte of the buffer must be a null byte.
+.PP
+These functions are for handling argz vectors.
+The pair (NULL,0) is an argz vector, and, conversely,
+argz vectors of length 0 must have null pointer.
+Allocation of nonempty argz vectors is done using
+.BR malloc (3),
+so that
+.BR free (3)
+can be used to dispose of them again.
+.PP
+.BR argz_add ()
+adds the string
+.I str
+at the end of the array
+.IR *argz ,
+and updates
+.I *argz
+and
+.IR *argz_len .
+.PP
+.BR argz_add_sep ()
+is similar, but splits the string
+.I str
+into substrings separated by the delimiter
+.IR delim .
+For example, one might use this on a UNIX search path with
+delimiter \(aq:\(aq.
+.PP
+.BR argz_append ()
+appends the argz vector
+.RI ( buf ,\  buf_len )
+after
+.RI ( *argz ,\  *argz_len )
+and updates
+.IR *argz
+and
+.IR *argz_len .
+(Thus,
+.I *argz_len
+will be increased by
+.IR buf_len .)
+.PP
+.BR argz_count ()
+counts the number of strings, that is,
+the number of null bytes (\(aq\e0\(aq), in
+.RI ( argz ,\  argz_len ).
+.PP
+.BR argz_create ()
+converts a UNIX-style argument vector
+.IR argv ,
+terminated by
+.IR "(char\ *)\ 0" ,
+into an argz vector
+.RI ( *argz ,\  *argz_len ).
+.PP
+.BR argz_create_sep ()
+converts the null-terminated string
+.I str
+into an argz vector
+.RI ( *argz ,\  *argz_len )
+by breaking it up at every occurrence of the separator
+.IR sep .
+.PP
+.BR argz_delete ()
+removes the substring pointed to by
+.I entry
+from the argz vector
+.RI ( *argz ,\  *argz_len )
+and updates
+.I *argz
+and
+.IR *argz_len .
+.PP
+.BR argz_extract ()
+is the opposite of
+.BR argz_create ().
+It takes the argz vector
+.RI ( argz ,\  argz_len )
+and fills the array starting at
+.I argv
+with pointers to the substrings, and a final NULL,
+making a UNIX-style argv vector.
+The array
+.I argv
+must have room for
+.IR argz_count ( argz ", " argz_len ") + 1"
+pointers.
+.PP
+.BR argz_insert ()
+is the opposite of
+.BR argz_delete ().
+It inserts the argument
+.I entry
+at position
+.I before
+into the argz vector
+.RI ( *argz ,\  *argz_len )
+and updates
+.I *argz
+and
+.IR *argz_len .
+If
+.I before
+is NULL, then
+.I entry
+will inserted at the end.
+.PP
+.BR argz_next ()
+is a function to step through the argz vector.
+If
+.I entry
+is NULL, the first entry is returned.
+Otherwise, the entry
+following is returned.
+It returns NULL if there is no following entry.
+.PP
+.BR argz_replace ()
+replaces each occurrence of
+.I str
+with
+.IR with ,
+reallocating argz as necessary.
+If
+.I replace_count
+is non-NULL,
+.I *replace_count
+will be incremented by the number of replacements.
+.PP
+.BR argz_stringify ()
+is the opposite of
+.BR argz_create_sep ().
+It transforms the argz vector into a normal string by replacing
+all null bytes (\(aq\e0\(aq) except the last by
+.IR sep .
+.SH RETURN VALUE
+All argz functions that do memory allocation have a return type of
+.IR error_t
+(an integer type),
+and return 0 for success, and
+.B ENOMEM
+if an allocation error occurs.
+.SH ATTRIBUTES
+For an explanation of the terms used in this section, see
+.BR attributes (7).
+.ad l
+.nh
+.TS
+allbox;
+lbx lb lb
+l l l.
+Interface	Attribute	Value
+T{
+.BR argz_add (),
+.BR argz_add_sep (),
+.BR argz_append (),
+.BR argz_count (),
+.BR argz_create (),
+.BR argz_create_sep (),
+.BR argz_delete (),
+.BR argz_extract (),
+.BR argz_insert (),
+.BR argz_next (),
+.BR argz_replace (),
+.BR argz_stringify ()
+T}	Thread safety	MT-Safe
+.TE
+.hy
+.ad
+.sp 1
+.SH CONFORMING TO
+These functions are a GNU extension.
+.SH BUGS
+Argz vectors without a terminating null byte may lead to
+Segmentation Faults.
+.SH SEE ALSO
+.BR envz_add (3)
